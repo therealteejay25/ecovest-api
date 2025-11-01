@@ -1,6 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 
-type User = { id: string; fullName: string; email: string; demoBalance: number } | null;
+type User = {
+  id: string;
+  fullName: string;
+  email: string;
+  demoBalance: number;
+} | null;
 
 export function useAuth() {
   const [user, setUser] = useState<User>(null);
@@ -10,13 +15,13 @@ export function useAuth() {
   const fetchMe = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/auth/me', { credentials: 'include' });
-      if (!res.ok) throw new Error('Not authenticated');
+      const res = await fetch("/auth/me", { credentials: "include" });
+      if (!res.ok) throw new Error("Not authenticated");
       const data = await res.json();
       setUser(data.user || null);
-    } catch (err: any) {
+    } catch (err) {
       setUser(null);
-      setError(err.message || 'Failed to fetch user');
+      setError(err.message || "Failed to fetch user");
     } finally {
       setLoading(false);
     }
@@ -30,43 +35,47 @@ export function useAuth() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/auth/login', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/auth/login", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      if (!res.ok) throw new Error('Invalid credentials');
+      if (!res.ok) throw new Error("Invalid credentials");
       const data = await res.json();
       setUser(data.user);
       return data.user;
-    } catch (err: any) {
-      setError(err.message || 'Login failed');
+    } catch (err) {
+      setError(err.message || "Login failed");
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const register = async (fullName: string, email: string, password: string) => {
+  const register = async (
+    fullName: string,
+    email: string,
+    password: string
+  ) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/auth/register', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/auth/register", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fullName, email, password }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.message || 'Registration failed');
+        throw new Error(body.message || "Registration failed");
       }
       const data = await res.json();
       setUser(data.user);
       return data.user;
-    } catch (err: any) {
-      setError(err.message || 'Registration failed');
+    } catch (err) {
+      setError(err.message || "Registration failed");
       throw err;
     } finally {
       setLoading(false);
@@ -76,7 +85,7 @@ export function useAuth() {
   const logout = async () => {
     setLoading(true);
     try {
-      await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+      await fetch("/auth/logout", { method: "POST", credentials: "include" });
       setUser(null);
     } catch (_) {
       setUser(null);

@@ -14,6 +14,7 @@ import chatRoutes from "./src/routes/chat";
 import swaggerUi from "swagger-ui-express";
 import fs from "fs";
 import { updateAllInvestments } from "./src/utils/updateInvestments";
+import fetch from "node-fetch";
 
 dotenv.config();
 
@@ -46,6 +47,12 @@ app.use("/api/invest", investRoutes);
 app.use("/api/chat", chatRoutes);
 
 app.get("/", (_, res) => res.send("Ecovest MVP skeleton running"));
+
+// Keep-alive endpoint for Render
+app.get("/ping", (_, res) => {
+  console.log("[server] Ping received at", new Date().toISOString());
+  res.send("pong");
+});
 
 // Swagger UI (OpenAPI) for frontend devs — serves the docs/openapi.json
 try {
@@ -84,6 +91,20 @@ cron.schedule(CRON_SCHEDULE, async () => {
     console.error("[server] updater error", err);
   }
 });
+
+// Self-ping mechanism to prevent Render from spinning down
+const RENDER_URL = "https://ecovest.onrender.com"; // Add this to your .env file
+if (RENDER_URL) {
+  setInterval(async () => {
+    try {
+      const response = await fetch(`${RENDER_URL}/ping`);
+      console.log("[server] Self-ping succeeded:", new Date().toISOString());
+    } catch (err) {
+      console.error("[server] Self-ping failed:", err);
+    }
+  }, 840000); // 14 minutes in milliseconds
+  console.log("[server] Self-ping mechanism enabled");
+}
 
 app.listen(PORT, () =>
   console.log(`[server] listening on http://localhost:${PORT}`)

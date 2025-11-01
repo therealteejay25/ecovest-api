@@ -3,6 +3,7 @@
 This folder contains small React hooks examples that show how to integrate with the Ecovest backend using cookie-based auth (HttpOnly `token` cookie).
 
 Files:
+
 - `src/frontend-examples/useAuth.tsx` — login/register/logout and session fetch (`/auth/*`).
 - `src/frontend-examples/useChat.tsx` — load chat history, send messages, clear history (`/api/chat/*`).
 - `src/frontend-examples/useInvest.tsx` — simulate, invest, top-up, sell/drop (`/api/invest/*`).
@@ -26,8 +27,8 @@ pnpm add -D @types/react @types/react-dom
 3. Use the hooks in components, for example:
 
 ```tsx
-import React from 'react';
-import { useAuth } from './useAuth';
+import React from "react";
+import { useAuth } from "./useAuth";
 
 function App() {
   const { user, login, logout } = useAuth();
