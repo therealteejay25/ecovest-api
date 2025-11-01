@@ -9,6 +9,7 @@ import authRoutes from "./src/routes/auth";
 import dashboardRoutes from "./src/routes/dashboard";
 import aiRoutes from "./src/routes/ai";
 import investRoutes from "./src/routes/invest";
+import chatRoutes from "./src/routes/chat";
 import { updateAllInvestments } from "./src/utils/updateInvestments";
 
 dotenv.config();
@@ -18,7 +19,7 @@ app.use(
   cors({
     origin: [
       "https://ecovest01.vercel.app", // your production frontend
-      "http://localhost:3000",        // your local dev frontend
+      "http://localhost:3000", // your local dev frontend
     ],
     credentials: true, // allow cookies & auth headers
   })
@@ -30,6 +31,7 @@ app.use("/auth", authRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/invest", investRoutes);
+app.use("/api/chat", chatRoutes);
 
 app.get("/", (_, res) => res.send("Ecovest MVP skeleton running"));
 
