@@ -14,7 +14,15 @@ import { updateAllInvestments } from "./src/utils/updateInvestments";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "https://ecovest01.vercel.app", // your production frontend
+      "http://localhost:3000",        // your local dev frontend
+    ],
+    credentials: true, // allow cookies & auth headers
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 

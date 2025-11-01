@@ -17,6 +17,11 @@ const simulateNextValue = (inv: any) => {
 export const updateAllInvestments = async () => {
   // Find active investments, update them and their users' cached values if needed
   const active = await Investment.find({ status: "active" });
+
+  // Accumulate deltas per user to minimize DB writes
+  const deltasByUser: Record<string, number> = {};
+  const investmentSaves: Promise<any>[] = [];
+
   for (const inv of active) {
     // Base step
     let nextVal = simulateNextValue(inv);
@@ -38,6 +43,19 @@ export const updateAllInvestments = async () => {
     const prevVal = inv.currentValue ?? inv.initialAmount;
     inv.currentValue = nextVal;
 
+    // Compute delta and accumulate per user (apply payout fraction if configured)
+    const rawDelta = Number((nextVal - prevVal).toFixed(2));
+    const payoutFraction = Number(process.env.PAYOUT_FRACTION ?? 1);
+    const credit =
+      rawDelta > 0 ? Number((rawDelta * payoutFraction).toFixed(2)) : 0;
+    if (credit > 0) {
+      const uid = String(inv.user);
+      deltasByUser[uid] = (deltasByUser[uid] || 0) + credit;
+      console.log(
+        `[Updater] queued credit ₦${credit} for user ${uid} from inv ${inv._id}`
+      );
+    }
+
     // If duration elapsed, mark completed (simple heuristic)
     const daysSinceStart = Math.floor(
       (Date.now() - (inv.startDate?.getTime?.() || 0)) / (1000 * 60 * 60 * 24)
@@ -46,10 +64,33 @@ export const updateAllInvestments = async () => {
       inv.status = "completed";
     }
 
-    await inv.save();
+    investmentSaves.push(inv.save());
+  }
 
-    // No need to update user document here unless you keep derived totals there.
-    // Optionally you could compute & store portfolio summaries on the user.
+  // Save all investments in parallel
+  try {
+    await Promise.all(investmentSaves);
+  } catch (err) {
+    console.error("[Updater] error saving investments", err);
+  }
+
+  // Apply accumulated deltas to users (one update per user)
+  const userUpdates: Promise<any>[] = [];
+  for (const uid of Object.keys(deltasByUser)) {
+    const amount = deltasByUser[uid];
+    userUpdates.push(
+      User.findByIdAndUpdate(uid, { $inc: { demoBalance: amount } })
+        .then(() =>
+          console.log(`[Updater] credited total ₦${amount} to user ${uid}`)
+        )
+        .catch((err) =>
+          console.error(`[Updater] error crediting user ${uid}`, err)
+        )
+    );
+  }
+
+  if (userUpdates.length > 0) {
+    await Promise.all(userUpdates);
   }
 };
 

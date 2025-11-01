@@ -204,3 +204,96 @@ export const dropInvestment = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error selling investment" });
   }
 };
+
+// POST /api/invest/sell  (partial or full sell)
+export const sellInvestment = async (req: Request, res: Response) => {
+  try {
+    const uid = (req as any).user?.id;
+    if (!uid) return res.status(401).json({ message: "Not authenticated" });
+
+    const { investmentId, amount, percent } = req.body;
+    if (!investmentId)
+      return res.status(400).json({ message: "Missing investmentId" });
+
+    const user = await User.findById(uid);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const inv = await Investment.findById(investmentId);
+    if (!inv) return res.status(404).json({ message: "Investment not found" });
+    if (String(inv.user) !== String(user._id))
+      return res.status(403).json({ message: "Not your investment" });
+
+    const current = Number(inv.currentValue || inv.initialAmount || 0);
+    let sellAmount = 0;
+    if (typeof percent === "number") {
+      const p = Math.max(0, Math.min(100, percent));
+      sellAmount = Number((current * (p / 100)).toFixed(2));
+    } else if (typeof amount === "number") {
+      sellAmount = Math.min(current, Number(amount));
+    } else {
+      // default: full sell
+      sellAmount = current;
+    }
+
+    if (sellAmount <= 0)
+      return res.status(400).json({ message: "Nothing to sell" });
+
+    // reduce investment by proportion
+    const proportion = sellAmount / current;
+    inv.currentValue = Number((inv.currentValue - sellAmount).toFixed(2));
+    inv.initialAmount = Number(
+      (inv.initialAmount - inv.initialAmount * proportion).toFixed(2)
+    );
+
+    // credit user
+    user.demoBalance = Number((user.demoBalance + sellAmount).toFixed(2));
+
+    // if fully sold or near-zero, mark completed and remove from user's actualInvestments
+    if (inv.currentValue <= 0.01) {
+      inv.status = "completed";
+      user.actualInvestments = (user.actualInvestments || []).filter(
+        (id: any) => String(id) !== String(inv._id)
+      );
+    }
+
+    await inv.save();
+    await user.save();
+
+    res.json({
+      message: "Sold",
+      sold: sellAmount,
+      demoBalance: user.demoBalance,
+      investment: inv,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error selling investment" });
+  }
+};
+
+// POST /api/invest/admin/toggle-fluctuate
+export const toggleFluctuate = async (req: Request, res: Response) => {
+  try {
+    const uid = (req as any).user?.id;
+    if (!uid) return res.status(401).json({ message: "Not authenticated" });
+
+    const { investmentId, fluctuate } = req.body;
+    if (!investmentId)
+      return res.status(400).json({ message: "Missing investmentId" });
+
+    const inv = await Investment.findById(investmentId);
+    if (!inv) return res.status(404).json({ message: "Investment not found" });
+
+    // allow owner to toggle for demo purposes
+    if (String(inv.user) !== String(uid))
+      return res.status(403).json({ message: "Not allowed" });
+
+    inv.fluctuate = Boolean(fluctuate);
+    await inv.save();
+
+    res.json({ message: "Updated", investment: inv });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error updating investment" });
+  }
+};
