@@ -24,7 +24,7 @@ const app = express();
 const isProd = process.env.NODE_ENV === "production";
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 const allowedOrigins = isProd
-  ? [FRONTEND_URL]
+  ? [FRONTEND_URL, "https://ecovest01.vercel.app"]
   : [FRONTEND_URL, "http://localhost:3000"];
 
 // Behind proxies (Render, Heroku) — required for secure cookies & x-forwarded-proto
