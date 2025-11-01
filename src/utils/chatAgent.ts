@@ -7,7 +7,7 @@ import { simulateProjection } from "./simulator";
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: "123123",
-  baseURL: "https://api.algion.dev/v1"
+  baseURL: "https://api.algion.dev/v1",
 });
 
 /**
@@ -17,7 +17,7 @@ async function getUserContext(userId: string) {
   try {
     // Get user and their investments
     const user = await User.findById(userId).select(
-      "fullName email demoBalance aiPortfolio"
+      "fullName email demoBalance aiPortfolio investmentGoal riskTolerance monthlyIncome onboardingCompleted"
     );
     const investments = await Investment.find({ user: userId });
 
@@ -33,6 +33,21 @@ USER PROFILE:
 Name: ${user?.fullName}
 Demo Balance: ₦${user?.demoBalance?.toLocaleString()}
 Portfolio Value: ₦${portfolioValue.toLocaleString()}
+Investment Goal: ${user?.investmentGoal || "Not set"} ${
+      user?.investmentGoal === "sdg"
+        ? "(Focus on Sustainable Development Goals)"
+        : user?.investmentGoal === "profit"
+        ? "(Focus on Maximum Returns)"
+        : user?.investmentGoal === "both"
+        ? "(Balance SDG Impact & Returns)"
+        : ""
+    }
+Risk Tolerance: ${user?.riskTolerance || "Not set"}
+Monthly Income: ${
+      user?.monthlyIncome
+        ? `₦${user.monthlyIncome.toLocaleString()}`
+        : "Not set"
+    }
 
 CURRENT INVESTMENTS:
 ${investments
@@ -129,12 +144,25 @@ export async function chat(userId: string, message: string) {
         content: `You are EcovestAI, a helpful investment advisor chatbot for Ecovest. You have access to the user's profile, investment portfolio, and AI recommendations.
         
 When discussing investments and recommendations:
-- Be clear about risk levels and expected returns
-- Suggest diversification when appropriate
+- Align suggestions with the user's investment goal (SDG impact, profit, or both)
+- Match investment risk levels with user's stated risk tolerance
+- Consider monthly income when suggesting investment amounts
+- Suggest diversification while respecting risk tolerance
+- Highlight SDG impacts for users interested in sustainable investing
 - Remind users this is a demo/simulation environment
 - Use proper currency formatting (₦) for Nigerian Naira
 - Be friendly but professional
 - Keep responses concise and focused
+
+Investment Preferences Guide:
+- For SDG-focused users: Emphasize environmental and social impact
+- For profit-focused users: Focus on highest returns within risk tolerance
+- For balanced users: Show both SDG impact and financial returns
+- Risk Tolerance:
+  * Low: Safer investments, more bonds, lower volatility
+  * Medium: Balanced portfolio, moderate growth
+  * High: Growth-focused, can handle volatility
+- Suggested monthly investment: 10-30% of stated monthly income
 
 Here is the current user context:
 

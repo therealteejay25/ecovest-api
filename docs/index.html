@@ -183,11 +183,36 @@ PAYOUT_FRACTION=1</pre
         </section>
 
         <section>
+          <h2>User Onboarding</h2>
+          <p class="muted small">
+            Routes mounted under <code>/api/onboarding</code>
+          </p>
+          <p>
+            These endpoints help collect user preferences to personalize the
+            investment experience.
+          </p>
+
+          <h3>Get Onboarding Status</h3>
+          <p>
+            GET <code>/api/onboarding/status</code> — Returns current
+            preferences and completion status.
+          </p>
+
+          <h3>Update Preferences</h3>
+          <p>POST <code>/api/onboarding/update</code></p>
+          <pre>
+{
+  "investmentGoal": "sdg",     // "sdg", "profit", or "both"
+  "riskTolerance": "medium",   // "low", "medium", or "high"
+  "monthlyIncome": 250000      // amount in Naira
+}</pre
+          >
+
           <h2>Chat Agent</h2>
           <p class="muted small">
             An interactive AI agent is available under <code>/api/chat</code>.
-            It has access to the user's profile, investments, and AI
-            recommendations to answer questions.
+            It has access to the user's profile, investment preferences, and AI
+            recommendations to provide personalized guidance.
           </p>
 
           <h3>Send message</h3>
@@ -279,6 +304,13 @@ curl -X POST http://localhost:4000/api/invest \
             </li>
             <li>Demo balance default: ₦300,000 on signup</li>
             <li>Chat history stored in <code>ChatHistory</code> collection</li>
+            <li>Investment goals: SDG impact, profit maximization, or both</li>
+            <li>
+              Risk levels: low (conservative), medium (balanced), high (growth)
+            </li>
+            <li>
+              AI adapts to user's investment preferences and risk tolerance
+            </li>
           </ul>
         </section>
 

@@ -11,6 +11,7 @@ import dashboardRoutes from "./src/routes/dashboard";
 import aiRoutes from "./src/routes/ai";
 import investRoutes from "./src/routes/invest";
 import chatRoutes from "./src/routes/chat";
+import onboardingRoutes from "./src/routes/onboarding";
 import swaggerUi from "swagger-ui-express";
 import fs from "fs";
 import { updateAllInvestments } from "./src/utils/updateInvestments";
@@ -68,6 +69,7 @@ app.use("/dashboard", dashboardRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/invest", investRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/onboarding", onboardingRoutes);
 
 app.get("/", (_, res) => res.send("Ecovest MVP skeleton running"));
 

@@ -1,6 +1,9 @@
 import mongoose, { Document } from "mongoose";
 import bcrypt from "bcryptjs";
 
+export type InvestmentGoal = "sdg" | "profit" | "both";
+export type RiskTolerance = "low" | "medium" | "high";
+
 export interface IUser extends Document {
   fullName: string;
   email: string;
@@ -12,6 +15,11 @@ export interface IUser extends Document {
   authProvider?: string;
   profileImage?: string;
   isVerified?: boolean;
+  // Onboarding fields
+  investmentGoal?: InvestmentGoal;
+  riskTolerance?: RiskTolerance;
+  monthlyIncome?: number;
+  onboardingCompleted?: boolean;
   matchPassword(entered: string): Promise<boolean>;
 }
 
@@ -30,6 +38,25 @@ const UserSchema = new mongoose.Schema<IUser>(
     authProvider: { type: String, enum: ["email", "google"], default: "email" },
     profileImage: { type: String },
     isVerified: { type: Boolean, default: false },
+    // Onboarding fields
+    investmentGoal: {
+      type: String,
+      enum: ["sdg", "profit", "both"],
+      default: undefined,
+    },
+    riskTolerance: {
+      type: String,
+      enum: ["low", "medium", "high"],
+      default: undefined,
+    },
+    monthlyIncome: {
+      type: Number,
+      default: undefined,
+    },
+    onboardingCompleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
