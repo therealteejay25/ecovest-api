@@ -1,0 +1,223 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Ecovest API",
+    "version": "1.0.0",
+    "description": "API for Ecovest demo — authentication, AI recommendations, investing and chat agent. Cookie-based auth (HttpOnly cookie named 'token')."
+  },
+  "servers": [
+    { "url": "http://localhost:4000", "description": "Local development" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "token"
+      }
+    },
+    "schemas": {
+      "UserSummary": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "fullName": { "type": "string" },
+          "email": { "type": "string" },
+          "demoBalance": { "type": "number" }
+        }
+      },
+      "AIRecommendation": {
+        "type": "object",
+        "properties": {
+          "project_name": { "type": "string" },
+          "expected_return_percent": { "type": "number" },
+          "risk_level": { "type": "string" },
+          "duration": { "type": "number" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Register a new user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fullName": { "type": "string" },
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                },
+                "required": ["fullName", "email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserSummary" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Login a user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserSummary" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/google": {
+      "post": {
+        "summary": "Sign in with Google idToken",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "idToken": { "type": "string" } },
+                "required": ["idToken"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserSummary" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Get authenticated user",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/ai/generate": {
+      "post": {
+        "summary": "Generate AI recommendations and save to user.aiPortfolio",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/invest/simulate": {
+      "post": {
+        "summary": "Simulate a projection for UI",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "recommendation": {
+                    "$ref": "#/components/schemas/AIRecommendation"
+                  },
+                  "amount": { "type": "number" }
+                },
+                "required": ["recommendation", "amount"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Projection returned" } }
+      }
+    },
+    "/api/invest": {
+      "post": {
+        "summary": "Create an actual investment",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "recommendationIndex": { "type": "integer" },
+                  "recommendation": {
+                    "$ref": "#/components/schemas/AIRecommendation"
+                  },
+                  "amount": { "type": "number" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Investment created" } }
+      }
+    },
+    "/api/chat/message": {
+      "post": {
+        "summary": "Send a message to the AI chat agent",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "message": { "type": "string" } },
+                "required": ["message"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "AI reply",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "reply": { "type": "string" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

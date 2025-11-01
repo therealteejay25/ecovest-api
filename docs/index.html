@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Ecovest API — Documentation</title>
+    <style>
+      body {
+        font-family: Inter, system-ui, -apple-system, Arial, sans-serif;
+        line-height: 1.6;
+        padding: 32px;
+        background: #f7fafc;
+        color: #0f172a;
+      }
+      header {
+        margin-bottom: 24px;
+      }
+      h1 {
+        margin: 0 0 8px 0;
+        font-size: 28px;
+      }
+      p.lead {
+        margin: 0 0 16px 0;
+        color: #475569;
+      }
+      section {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 2px rgba(2, 6, 23, 0.05);
+      }
+      pre {
+        background: #0f172a;
+        color: #e6eef8;
+        padding: 12px;
+        border-radius: 6px;
+        overflow: auto;
+      }
+      code {
+        background: #eef2ff;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .muted {
+        color: #64748b;
+      }
+      .small {
+        font-size: 13px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 16px;
+      }
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      footer {
+        margin-top: 24px;
+        font-size: 13px;
+        color: #6b7280;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Ecovest API — Documentation</h1>
+      <p class="lead">
+        Quick reference for frontend and integrators: auth, AI, investing, and
+        chat endpoints (demo / sandbox).
+      </p>
+    </header>
+
+    <section>
+      <h2>Getting started</h2>
+      <ul>
+        <li>
+          Run the server locally: use <code>pnpm run dev</code> (project uses
+          TypeScript + tsx).
+        </li>
+        <li>
+          Environment (important):
+          <pre>
+OPENAI_API_KEY=...
+OPENAI_MODEL=gpt-3.5-turbo
+MONGO_URI=mongodb://localhost:27017/ecovest-demo
+JWT_SECRET=your_jwt_secret
+GOOGLE_CLIENT_ID=&lt;optional&gt;
+PAYOUT_FRACTION=1</pre
+          >
+        </li>
+        <li>
+          Auth uses a HttpOnly cookie named <code>token</code>. When calling API
+          from the browser include credentials (fetch:
+          <code>credentials: 'include'</code>).
+        </li>
+      </ul>
+    </section>
+
+    <div class="grid">
+      <main>
+        <section>
+          <h2>Authentication</h2>
+          <p class="muted small">Routes mounted under <code>/auth</code></p>
+
+          <h3>Register</h3>
+          <p>POST <code>/auth/register</code></p>
+          <pre>
+{ "fullName": "Alice", "email": "alice@example.com", "password": "secret" }</pre
+          >
+
+          <h3>Login</h3>
+          <p>POST <code>/auth/login</code></p>
+          <pre>{ "email": "alice@example.com", "password": "secret" }</pre>
+
+          <h3>Google Sign-In</h3>
+          <p>
+            POST <code>/auth/google</code> with body
+            <code>{ "idToken": "&lt;ID_TOKEN&gt;" }</code>. The backend verifies
+            the token with Google, links/creates a user and sets the HttpOnly
+            cookie.
+          </p>
+
+          <h3>Session / Logout</h3>
+          <p>
+            GET <code>/auth/me</code> — returns the current authenticated user
+            (protected).
+          </p>
+          <p>POST <code>/auth/logout</code> — clears the cookie.</p>
+        </section>
+
+        <section>
+          <h2>AI</h2>
+          <p class="muted small">Routes mounted under <code>/api/ai</code></p>
+          <h3>Generate recommendations</h3>
+          <p>
+            POST <code>/api/ai/generate</code> — protected. Generates AI
+            investment recommendations and stores them on the user record
+            (<code>user.aiPortfolio</code>).
+          </p>
+        </section>
+
+        <section>
+          <h2>Investing</h2>
+          <p class="muted small">
+            Routes mounted under <code>/api/invest</code>
+          </p>
+          <ul>
+            <li>
+              POST <code>/api/invest/simulate</code> — simulate projection for a
+              recommendation (UI use).
+            </li>
+            <li>
+              POST <code>/api/invest</code> — create an actual investment from a
+              recommendation or custom data. Body:
+              <code>{ recommendationIndex?, recommendation?, amount }</code>.
+            </li>
+            <li>
+              POST <code>/api/invest/add</code> — top-up an investment. Body:
+              <code>{ investmentId, amount }</code>.
+            </li>
+            <li>
+              POST <code>/api/invest/drop</code> — sell entire investment
+              (credits demoBalance).
+            </li>
+            <li>
+              POST <code>/api/invest/sell</code> — partial/full sell. Body
+              accepts <code>amount</code> or <code>percent</code>.
+            </li>
+            <li>
+              POST <code>/api/invest/admin/toggle-fluctuate</code> — toggle
+              volatility shocks for an investment (protected/admin).
+            </li>
+          </ul>
+          <p class="small muted">
+            Note: Demo balances may be automatically credited with gains. The
+            <code>PAYOUT_FRACTION</code> env var controls what fraction of gains
+            are credited each tick (default 1).
+          </p>
+        </section>
+
+        <section>
+          <h2>Chat Agent</h2>
+          <p class="muted small">
+            An interactive AI agent is available under <code>/api/chat</code>.
+            It has access to the user's profile, investments, and AI
+            recommendations to answer questions.
+          </p>
+
+          <h3>Send message</h3>
+          <p>
+            POST <code>/api/chat/message</code> — Body:
+            <code>{ "message": "How is my portfolio performing?" }</code>
+          </p>
+          <p>Response: <code>{ "reply": "..." }</code></p>
+
+          <h3>History</h3>
+          <p>
+            GET <code>/api/chat/history</code> — returns conversation messages.
+          </p>
+          <p>
+            DELETE <code>/api/chat/history</code> — clear conversation history.
+          </p>
+
+          <h3>Recommendation analysis</h3>
+          <p>
+            GET <code>/api/chat/analyze/:recommendationIndex</code> — returns
+            simulation and strategy details for an item in
+            <code>user.aiPortfolio</code>.
+          </p>
+        </section>
+
+        <section>
+          <h2>Examples</h2>
+          <h4>Login (fetch)</h4>
+          <pre>
+const res = await fetch('/auth/login', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email: 'alice@example.com', password: 'secret' })
+});
+const data = await res.json();</pre
+          >
+
+          <h4>Call chat agent (curl)</h4>
+          <pre>
+curl -X POST http://localhost:4000/api/chat/message \
+  -H "Content-Type: application/json" \
+  -d '{ "message": "How is my portfolio performing?" }' \
+  -b cookies.txt</pre
+          >
+
+          <h4>Simulate then invest (curl)</h4>
+          <pre>
+curl -X POST http://localhost:4000/api/invest/simulate \
+  -H "Content-Type: application/json" \
+  -d '{ "recommendation": { "expected_return_percent": 12, "duration": 12 }, "amount": 50000 }' \
+  -b cookies.txt
+
+curl -X POST http://localhost:4000/api/invest \
+  -H "Content-Type: application/json" \
+  -d '{ "recommendationIndex": 0, "amount": 50000 }' \
+  -b cookies.txt</pre
+          >
+        </section>
+
+        <section>
+          <h2>Troubleshooting</h2>
+          <ul>
+            <li>
+              If the server doesn't start, check <code>MONGO_URI</code> and
+              <code>JWT_SECRET</code> in your .env.
+            </li>
+            <li>
+              To use the chat agent you must set <code>OPENAI_API_KEY</code> and
+              optionally <code>OPENAI_MODEL</code>.
+            </li>
+            <li>
+              If Google Sign-In fails, verify <code>GOOGLE_CLIENT_ID</code> (if
+              set) and that the client id token was generated by the correct
+              frontend OAuth client.
+            </li>
+          </ul>
+        </section>
+      </main>
+
+      <aside>
+        <section>
+          <h3>Useful notes</h3>
+          <ul>
+            <li>Cookie name: <code>token</code> (HttpOnly, SameSite=lax)</li>
+            <li>
+              Auth header supported as fallback:
+              <code>Authorization: Bearer &lt;token&gt;</code>
+            </li>
+            <li>Demo balance default: ₦300,000 on signup</li>
+            <li>Chat history stored in <code>ChatHistory</code> collection</li>
+          </ul>
+        </section>
+
+        <section>
+          <h3>Files of interest</h3>
+          <ul>
+            <li><code>src/controllers/authController.ts</code></li>
+            <li><code>src/utils/chatAgent.ts</code></li>
+            <li><code>src/models/ChatHistory.ts</code></li>
+            <li><code>src/utils/updateInvestments.ts</code></li>
+          </ul>
+        </section>
+      </aside>
+    </div>
+
+    <footer>
+      <p>
+        Generated documentation — Ecovest API. If you want a downloadable
+        Postman collection or an interactive Swagger/OpenAPI page, I can add
+        that next.
+      </p>
+    </footer>
+  </body>
+</html>
