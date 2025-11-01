@@ -4,6 +4,21 @@ import generateToken from "../utils/generateToken";
 import axios from "axios";
 import crypto from "crypto";
 
+const isProd = process.env.NODE_ENV === "production";
+const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN; // optional, set if you want cookies scoped to a domain
+
+const makeCookieOptions = () => {
+  const opts: any = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? ("none" as const) : ("lax" as const),
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    path: "/",
+  };
+  if (COOKIE_DOMAIN) opts.domain = COOKIE_DOMAIN;
+  return opts;
+};
+
 // Register new user
 export const register = async (req: Request, res: Response) => {
   try {
@@ -19,13 +34,7 @@ export const register = async (req: Request, res: Response) => {
 
     // Create token and set HttpOnly cookie so frontend doesn't need to store it manually.
     const token = generateToken(user._id.toString());
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      path: "/",
-    });
+    res.cookie("token", token, makeCookieOptions());
 
     // return user info (token is set as cookie)
     res.status(201).json({
@@ -58,13 +67,7 @@ export const login = async (req: Request, res: Response) => {
 
     // set httpOnly cookie with token
     const token = generateToken(user._id.toString());
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      path: "/",
-    });
+    res.cookie("token", token, makeCookieOptions());
 
     res.json({
       user: {
@@ -99,7 +102,14 @@ export const me = async (req: Request, res: Response) => {
 // Logout: clear cookie
 export const logout = async (req: Request, res: Response) => {
   try {
-    res.clearCookie("token", { path: "/" });
+    // clear cookie with same scope used when setting it
+    const clearOpts: any = { path: "/" };
+    if (isProd) {
+      clearOpts.secure = true;
+      clearOpts.sameSite = "none";
+      if (COOKIE_DOMAIN) clearOpts.domain = COOKIE_DOMAIN;
+    }
+    res.clearCookie("token", clearOpts);
     res.json({ message: "Logged out" });
   } catch (err) {
     console.error(err);
@@ -179,13 +189,7 @@ export const googleAuth = async (req: Request, res: Response) => {
 
     // set httpOnly cookie
     const token = generateToken(user._id.toString());
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      path: "/",
-    });
+    res.cookie("token", token, makeCookieOptions());
 
     res.json({
       user: {

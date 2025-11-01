@@ -19,15 +19,38 @@ import fetch from "node-fetch";
 dotenv.config();
 
 const app = express();
+// Production / frontend settings
+const isProd = process.env.NODE_ENV === "production";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+const allowedOrigins = isProd
+  ? [FRONTEND_URL]
+  : [FRONTEND_URL, "http://localhost:3000"];
+
+// Behind proxies (Render, Heroku) — required for secure cookies & x-forwarded-proto
+if (isProd) app.set("trust proxy", 1);
+
 app.use(
   cors({
-    origin: [
-      "https://ecovest01.vercel.app", // your production frontend
-      "http://localhost:3000", // your local dev frontend
-    ],
+    origin: (origin, callback) => {
+      // allow no-origin (like curl/postman) or matching frontend
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("CORS not allowed"), false);
+    },
     credentials: true, // allow cookies & auth headers
   })
 );
+
+// Force HTTPS in production (uses x-forwarded-proto header set by Render)
+if (isProd) {
+  app.use((req, res, next) => {
+    const proto = (req.headers["x-forwarded-proto"] || "").toString();
+    if (proto && proto !== "https") {
+      return res.redirect(`https://${req.headers.host}${req.url}`);
+    }
+    next();
+  });
+}
 app.use(express.json());
 app.use(cookieParser());
 
@@ -93,7 +116,7 @@ cron.schedule(CRON_SCHEDULE, async () => {
 });
 
 // Self-ping mechanism to prevent Render from spinning down
-const RENDER_URL = "https://ecovest.onrender.com"; // Add this to your .env file
+const RENDER_URL = process.env.RENDER_URL || undefined; // set in env when deployed
 if (RENDER_URL) {
   setInterval(async () => {
     try {
