@@ -41,7 +41,7 @@ app.use(cors({
 }));
 
 // ✅ Explicitly handle preflight requests
-app.options("*", cors({
+app.options(/.*/, cors({
   origin: allowedOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
