@@ -24,13 +24,11 @@ const app = express();
 const isProd = process.env.NODE_ENV === "production";
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://synq-lime.vercel.app",
-  "https://synq01.vercel.app",
-  "https://miniature-spoon-wr54g96jp4wqf599q.github.dev",
+  "https://ecovest01.vercel.app"
 ];
 
 app.use(cors({
-  origin: (origin, callback) => {
+  origin: (origin: any, callback: any) => {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
