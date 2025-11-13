@@ -36,11 +36,19 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
 }));
 
-// Force HTTPS in production (uses x-forwarded-proto header set by Render)
+// ✅ Explicitly handle preflight requests
+app.options("*", cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+}));
+
+// ✅ Then force HTTPS in production (AFTER CORS)
 if (isProd) {
   app.use((req, res, next) => {
     const proto = (req.headers["x-forwarded-proto"] || "").toString();
