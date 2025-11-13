@@ -22,25 +22,25 @@ dotenv.config();
 const app = express();
 // Production / frontend settings
 const isProd = process.env.NODE_ENV === "production";
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
-const allowedOrigins = isProd
-  ? [FRONTEND_URL, "https://ecovest01.vercel.app"]
-  : [FRONTEND_URL, "http://localhost:3000"];
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://synq-lime.vercel.app",
+  "https://synq01.vercel.app",
+  "https://miniature-spoon-wr54g96jp4wqf599q.github.dev",
+];
 
-// Behind proxies (Render, Heroku) — required for secure cookies & x-forwarded-proto
-if (isProd) app.set("trust proxy", 1);
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // allow no-origin (like curl/postman) or matching frontend
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error("CORS not allowed"), false);
-    },
-    credentials: true, // allow cookies & auth headers
-  })
-);
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+}));
 
 // Force HTTPS in production (uses x-forwarded-proto header set by Render)
 if (isProd) {

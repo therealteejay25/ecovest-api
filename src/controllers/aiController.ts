@@ -13,7 +13,7 @@ export const generateAiPortfolio = async (req: Request, res: Response) => {
 
     const input = {
       income: user?.income || user?.availableCapital || "unknown",
-      goal: user?.investmentGoal || "grow sustainable wealth",
+      goal: user?.investmentGoal || "both",
       amount: user?.demoBalance || user?.availableCapital || 0,
       risk: user?.riskAppetite || "Medium",
       sector: user?.preferredSectors?.[0] || undefined,
@@ -29,7 +29,7 @@ export const generateAiPortfolio = async (req: Request, res: Response) => {
     res.json({ aiPortfolio: recommendations });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "AI generation failed" });
+    res.status(500).json({ message: "AI generation failed", err });
   }
 };
 
